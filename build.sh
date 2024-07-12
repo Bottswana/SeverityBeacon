@@ -1,17 +1,27 @@
 #!/bin/bash
 sign_cert="74E1F259E1096FC80D85C8488E47E670B316540C"
 credential_profile="AppleDev-Bottswana55-PylonOne"
-
-
 cd SeverityBeacon
+
+echo -- Windows Build --
+rm -rf windows-build > /dev/null
+mkdir windows-build
+
+echo Build arm64
+dotnet publish -c Release -r win-arm64
+
+echo Build amd64
+dotnet publish -c Release -r win-amd64
+
+cp bin/Release/net8.0/win-x64/publish/SeverityBeacon.exe windows-build/SeverityBeacon-amd64.exe
+cp bin/Release/net8.0/win-arm64/publish/SeverityBeacon.exe windows-build/SeverityBeacon-arm64.exe
+
+zip windows-build/SeverityBeacon.zip windows-build/SeverityBeacon-amd64.exe windows-build/SeverityBeacon-arm64.exe
+
+echo -- MacOS Build --
+
 rm -rf macos-build > /dev/null
 mkdir macos-build
-
-echo Resign the native dylibs
-dotnet build -c Release -r osx-arm64
-dotnet build -c Release -r osx-amd64
-codesign --force --verbose --timestamp --sign $sign_cert bin/Release/net8.0/runtimes/osx-arm64/native/libSystem.IO.Ports.Native.dylib
-codesign --force --verbose --timestamp --sign $sign_cert bin/Release/net8.0/runtimes/osx-x64/native/libSystem.IO.Ports.Native.dylib
 
 echo Build arm64
 dotnet publish -c Release -r osx-arm64

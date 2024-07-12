@@ -263,3 +263,4 @@ __pycache__/
 *.db
 .DS_Store
 SeverityBeacon/macos-build
+SeverityBeacon/windows-build

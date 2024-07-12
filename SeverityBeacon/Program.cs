@@ -36,9 +36,9 @@ app.AddCommand(async (
                                  Severity Values: disaster, high, average, warning, information, "not classified"
                                  default = -s "[disaster,#FF0101,#0101FF,125]", -s "[high,#FF0101,#010101,125]" -s "[average,#FFA501]" -s "[warning,#FFFF01]"
                                  """)]string[]? severity, 
-    [Option(['r'], Description = "Query interval in seconds, default = 30")]int? queryInterval,
+    [Option(['r'], Description = "Query interval in seconds, default = 15")]int? queryInterval,
     [Option(['z'], Description = "Hex colour of zero problems state, default = #018001")]string? zeroProblemsHex,
-    [Option(['x'], Description = "After x number of queries with successive OK results, turn off the beacon")]int? clearBeaconAfter
+    [Option(['x'], Description = "After x number of queries with successive OK results, turn off the beacon, default = 9")]int? clearBeaconAfter
     ) =>
 {
     if (severity != null) ParseCliSeverityOptions(severity);
