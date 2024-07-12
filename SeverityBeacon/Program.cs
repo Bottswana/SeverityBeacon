@@ -222,5 +222,5 @@ async Task<IEnumerable<string>?> GetEnabledHostsInHostGroups(Uri zabbixUrl, stri
 
 string GetCurrentTime()
 {
-    return DateTime.Now.ToShortTimeString();
+    return DateTime.Now.ToLongTimeString();
 }

@@ -42,7 +42,7 @@ namespace SeverityBeacon
                 if( Option == null && (_BlankAfter != _ClearBeaconAfter) )
                 {
                     // State has recently changed to "all clear"
-                    Console.WriteLine($"WR 00 {_HexToByte(_DefaultState)}");
+                    //Console.WriteLine($"WR 00 {_HexToByte(_DefaultState)}");
                     _Port.WriteLine($"WR 00 {_HexToByte(_DefaultState)}");
                     _BlankAfter++;
                     return;
@@ -57,8 +57,8 @@ namespace SeverityBeacon
                 
                 // Set state 1
                 _BlankAfter = 0;
-                Console.WriteLine($"WR 00 {_HexToByte(Option.BeaconHexColourState1)}");
-                _Port.WriteLine($"WR 00 {_HexToByte(Option.BeaconHexColourState1)}");
+                //Console.WriteLine($"WR 00 {_HexToByte(Option.BeaconHexColourState1)}");
+                _Port.WriteLine($"WR 00 {_HexToByte(Option!.BeaconHexColourState1)}");
                 
                 // Check if we have a second state for flashing
                 if( !string.IsNullOrEmpty(Option.BeaconHexColourState2) && Option.BeaconChangeStateInterval != null )
@@ -85,11 +85,11 @@ namespace SeverityBeacon
                 _CancellationToken = new CancellationTokenSource();
                 while( _Flashing && Option.BeaconChangeStateInterval != null )
                 {
-                    Console.WriteLine($"WR 00 {_HexToByte(Option.BeaconHexColourState1)}");
+                    //Console.WriteLine($"WR 00 {_HexToByte(Option.BeaconHexColourState1)}");
                     _Port.WriteLine($"WR 00 {_HexToByte(Option.BeaconHexColourState1)}");
                     await Task.Delay(TimeSpan.FromMilliseconds((int)Option.BeaconChangeStateInterval), _CancellationToken.Token);
                     
-                    Console.WriteLine($"WR 00 {_HexToByte(Option.BeaconHexColourState2!)}");
+                    //Console.WriteLine($"WR 00 {_HexToByte(Option.BeaconHexColourState2!)}");
                     _Port.WriteLine($"WR 00 {_HexToByte(Option.BeaconHexColourState2!)}");
                     await Task.Delay(TimeSpan.FromMilliseconds((int)Option.BeaconChangeStateInterval), _CancellationToken.Token);
                 }
