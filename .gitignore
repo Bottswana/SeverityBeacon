@@ -261,3 +261,5 @@ __pycache__/
 *.pyc
 /ProvisionThat.SingleSignOn/tempkey.rsa
 *.db
+.DS_Store
+SeverityBeacon/macos-build

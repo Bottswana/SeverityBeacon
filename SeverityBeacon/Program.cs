@@ -31,12 +31,13 @@ app.AddCommand(async (
     [Option(['g'], Description = "Provide a HostGroup_ID to filter severity queries")]string? hostGroup,
     [Option(['s'], Description = """
                                  Severities to filter by with colour or flashing state:
-                                 Usage: -s [disaster,#FF0000]
+                                 Usage: -s [disaster,#FF0000] (static)
+                                        -s [disaster,#FF0000,#00FF00,125] (flashing between 2 colours each 125ms)
                                  Severity Values: disaster, high, average, warning, information, "not classified"
-                                 default = -s "[disaster,#E45959]", -s "[high,#E97659]" -s "[average,#FFA059]" -s "[warning,#FFC859]"
+                                 default = -s "[disaster,#FF0101,#0101FF,125]", -s "[high,#FF0101,#010101,125]" -s "[average,#FFA501]" -s "[warning,#FFFF01]"
                                  """)]string[]? severity, 
     [Option(['r'], Description = "Query interval in seconds, default = 30")]int? queryInterval,
-    [Option(['z'], Description = "Hex colour of zero problems state, default = #008000")]string? zeroProblemsHex,
+    [Option(['z'], Description = "Hex colour of zero problems state, default = #018001")]string? zeroProblemsHex,
     [Option(['x'], Description = "After x number of queries with successive OK results, turn off the beacon")]int? clearBeaconAfter
     ) =>
 {
@@ -142,22 +143,28 @@ void ParseCliSeverityOptions(IEnumerable<string> severitiyOptions)
         switch (splitOption[0].Trim())
         {
             case "disaster":
-                options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 5));
+                if(splitOption.Length == 4) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 5, splitOption[2].Trim(), int.Parse(splitOption[3])));
+                else options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 5));
                 break;
             case "high":
-                options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 4));
+                if(splitOption.Length == 4) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 4, splitOption[2].Trim(), int.Parse(splitOption[3])));
+                else options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 4));
                 break;
             case "average":
-                options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 3));
+                if(splitOption.Length == 4) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 3, splitOption[2].Trim(), int.Parse(splitOption[3])));
+                else options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 3));
                 break;
             case "warning":
-                options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 2));
+                if(splitOption.Length == 4) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 2, splitOption[2].Trim(), int.Parse(splitOption[3])));
+                else options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 2));
                 break;
             case "information":
-                options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 1));
+                if(splitOption.Length == 4) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 1, splitOption[2].Trim(), int.Parse(splitOption[3])));
+                else options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 1));
                 break;
             case "not classified":
-                options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 0));
+                if(splitOption.Length == 4) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 0, splitOption[2].Trim(), int.Parse(splitOption[3])));
+                else options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 0));
                 break;
         }
     }
