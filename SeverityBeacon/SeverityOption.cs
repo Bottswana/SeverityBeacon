@@ -1,32 +1,34 @@
 namespace SeverityBeacon;
 
-public record SeverityOption
+public record SeverityOption(
+    string BeaconHexColourState1,
+    int ZabbixSeverityValue,
+    string? BeaconHexColourState2 = null,
+    int? BeaconChangeStateInterval1 = null,
+    int? BeaconChangeStateInterval2 = null)
 {
-    public SeverityOption(string beaconHexColour, int zabbixSeverityValue, string? beaconHexColour2 = null, int? beaconChangeStateInterval = null)
-    {
-        BeaconHexColourState1 = beaconHexColour;
-        BeaconHexColourState2 = beaconHexColour2;
-        BeaconChangeStateInterval = beaconChangeStateInterval;
-        ZabbixSeverityValue = zabbixSeverityValue;
-    }
-
     /// <summary>
     /// Colour state 1
     /// </summary>
-    public string BeaconHexColourState1 { get; set; }
-    
+    public string BeaconHexColourState1 { get; set; } = BeaconHexColourState1;
+
     /// <summary>
     /// Colour State 2. If set, beacon will change between both states as defined by the interval
     /// </summary>
-    public string? BeaconHexColourState2 { get; set; }
-    
+    public string? BeaconHexColourState2 { get; set; } = BeaconHexColourState2;
+
     /// <summary>
-    /// How often to change between state 1 and state 2 in milliseconds
+    /// Time to wait to transition between State 1 and State 2
     /// </summary>
-    public int? BeaconChangeStateInterval { get; set; }
-    
+    public int? BeaconChangeStateInterval1 { get; set; } = BeaconChangeStateInterval1;
+
+    /// <summary>
+    /// Time to wait to transntion between State 2 and State 1
+    /// </summary>
+    public int? BeaconChangeStateInterval2 { get; set; } = BeaconChangeStateInterval2;
+
     /// <summary>
     /// The severity to match from Zabbix
     /// </summary>
-    public int ZabbixSeverityValue { get; set; }
+    public int ZabbixSeverityValue { get; set; } = ZabbixSeverityValue;
 }

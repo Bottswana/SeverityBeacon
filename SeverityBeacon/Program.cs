@@ -13,9 +13,9 @@ HttpClient httpClient = new HttpClient();
 Dictionary<string, SeverityOption> zabbixSeverityOptions = new()
 {
     { "disaster", new("#FF0101", 5, "#0101FF", 125) },
-    { "high", new ("#FF0101",4, "#010101", 125) },
-    { "average", new ("#FFA501",3) },
-    { "warning", new ("#FFFF01",2) }
+    { "high", new ("#FF0101",4, "#000000", 125) },
+    { "average", new ("#FFA501",3, "#000000", 3000, 500) },
+    { "warning", new ("#FFFF01",2, "#000000", 3000, 500) }
 };
 
 var zeroProblemsBeconHex = "#01FF01";
@@ -33,8 +33,9 @@ app.AddCommand(async (
                                  Severities to filter by with colour or flashing state:
                                  Usage: -s [disaster,#FF0000] (static)
                                         -s [disaster,#FF0000,#00FF00,125] (flashing between 2 colours each 125ms)
+                                        -s [disaster,#FFA501,#000000,3000,500] (flashing between 2 colours, wait 3000ms before state 1 -> state 2, then 500ms before state 2 -> state 1)
                                  Severity Values: disaster, high, average, warning, information, "not classified"
-                                 default = -s "[disaster,#FF0101,#0101FF,125]", -s "[high,#FF0101,#010101,125]" -s "[average,#FFA501]" -s "[warning,#FFFF01]"
+                                 default = -s "[disaster,#FF0000,#0000FF,125]", -s "[high,#FF00000,#000000,125]" -s "[average,#FFA501,#000000,3000,500]" -s "[warning,#FFFF01,#000000,3000,500]"
                                  """)]string[]? severity, 
     [Option(['r'], Description = "Query interval in seconds, default = 15")]int? queryInterval,
     [Option(['z'], Description = "Hex colour of zero problems state, default = #018001")]string? zeroProblemsHex,
@@ -57,6 +58,7 @@ app.AddCommand(async (
 });
 
 app.Run();
+return;
 
 async Task PollProblems(Uri zabbixUrl, string apiToken)
 {
@@ -97,11 +99,34 @@ async Task PollProblems(Uri zabbixUrl, string apiToken)
     await Task.Delay(2000);
     Console.Clear();
     Console.WriteLine("Zabbix poll started");
-    while (true)
+    
+    // SIGNIT Handler
+    var RunMainLoop = true;
+    var CancellationToken = new CancellationTokenSource();
+    Console.CancelKeyPress += delegate {
+        Console.WriteLine("Application is shutting down, please wait");
+        CancellationToken.Cancel();
+        RunMainLoop = false;
+    };
+    
+    // Main Loop
+    while( RunMainLoop )
     {
-        Beacon.SendBeaconIssue(await GetProblems(zabbixUrl, apiToken));
-        await Task.Delay(TimeSpan.FromSeconds(queryIntervalSeconds));
+        try
+        {
+            Beacon.SendBeaconIssue(await GetProblems(zabbixUrl, apiToken));
+            await Task.Delay(TimeSpan.FromSeconds(queryIntervalSeconds), CancellationToken.Token);
+        }
+        catch( TaskCanceledException ) {}
+        catch( Exception Ex )
+        {
+            Console.WriteLine($"Exception thrown in main loop: {Ex.Message}");
+            Console.WriteLine(Ex.StackTrace);
+        }
     }
+    
+    // Dispose beacon thread
+    Beacon?.Dispose();
 }
 
 async Task GetHostGroups(Uri zabbixUrl, string apiToken)
@@ -143,27 +168,33 @@ void ParseCliSeverityOptions(IEnumerable<string> severitiyOptions)
         switch (splitOption[0].Trim())
         {
             case "disaster":
-                if(splitOption.Length == 4) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 5, splitOption[2].Trim(), int.Parse(splitOption[3])));
+                if(splitOption.Length == 5) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 5, splitOption[2].Trim(), int.Parse(splitOption[3]), int.Parse(splitOption[4])));
+                else if(splitOption.Length == 4) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 5, splitOption[2].Trim(), int.Parse(splitOption[3])));
                 else options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 5));
                 break;
             case "high":
-                if(splitOption.Length == 4) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 4, splitOption[2].Trim(), int.Parse(splitOption[3])));
+                if(splitOption.Length == 5) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 4, splitOption[2].Trim(), int.Parse(splitOption[3]), int.Parse(splitOption[4])));
+                else if(splitOption.Length == 4) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 4, splitOption[2].Trim(), int.Parse(splitOption[3])));
                 else options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 4));
                 break;
             case "average":
-                if(splitOption.Length == 4) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 3, splitOption[2].Trim(), int.Parse(splitOption[3])));
+                if(splitOption.Length == 5) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 3, splitOption[2].Trim(), int.Parse(splitOption[3]), int.Parse(splitOption[4])));
+                else if(splitOption.Length == 4) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 3, splitOption[2].Trim(), int.Parse(splitOption[3])));
                 else options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 3));
                 break;
             case "warning":
-                if(splitOption.Length == 4) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 2, splitOption[2].Trim(), int.Parse(splitOption[3])));
+                if(splitOption.Length == 5) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 2, splitOption[2].Trim(), int.Parse(splitOption[3]), int.Parse(splitOption[4])));
+                else if(splitOption.Length == 4) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 2, splitOption[2].Trim(), int.Parse(splitOption[3])));
                 else options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 2));
                 break;
             case "information":
-                if(splitOption.Length == 4) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 1, splitOption[2].Trim(), int.Parse(splitOption[3])));
+                if(splitOption.Length == 5) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 1, splitOption[2].Trim(), int.Parse(splitOption[3]), int.Parse(splitOption[4])));
+                else if(splitOption.Length == 4) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 1, splitOption[2].Trim(), int.Parse(splitOption[3])));
                 else options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 1));
                 break;
             case "not classified":
-                if(splitOption.Length == 4) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 0, splitOption[2].Trim(), int.Parse(splitOption[3])));
+                if(splitOption.Length == 5) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 0, splitOption[2].Trim(), int.Parse(splitOption[3]), int.Parse(splitOption[4])));
+                else if(splitOption.Length == 4) options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 0, splitOption[2].Trim(), int.Parse(splitOption[3])));
                 else options.Add(splitOption[0].Trim(), new SeverityOption(splitOption[1].Trim(), 0));
                 break;
         }

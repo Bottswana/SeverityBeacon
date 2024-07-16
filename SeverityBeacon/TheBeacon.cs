@@ -2,15 +2,16 @@ using System.IO.Ports;
 
 namespace SeverityBeacon
 {
-    public class TheBeacon
+    public class TheBeacon : IDisposable
     {
         private CancellationTokenSource? _CancellationToken;
         private readonly int _ClearBeaconAfter;
         private readonly string _DefaultState;
         private readonly SerialPort _Port;
-        private int _BlankAfter = 0;
+        private int _BlankAfter;
         private bool _Flashing;
         
+        #region Initialisation
         public TheBeacon(string ComPort, string _defaultState, int clearBeaconAfter)
         {
             _Port = new SerialPort(ComPort, 9600);
@@ -18,7 +19,27 @@ namespace SeverityBeacon
             _DefaultState = _defaultState;
             _Port.Open();
         }
+        
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
 
+        private void Dispose(bool disposing)
+        {
+            _Flashing = false;
+            _CancellationToken?.Cancel();
+            if( disposing )
+            {
+                _CancellationToken?.Dispose();
+                _CancellationToken = null;
+                _Port.Dispose();
+            }
+        }
+        #endregion Initialisation
+
+        #region Public Methods
         /// <summary>
         /// Return a list of available serial devices
         /// </summary>
@@ -61,7 +82,7 @@ namespace SeverityBeacon
                 _Port.WriteLine($"WR 00 {_HexToByte(Option!.BeaconHexColourState1)}");
                 
                 // Check if we have a second state for flashing
-                if( !string.IsNullOrEmpty(Option.BeaconHexColourState2) && Option.BeaconChangeStateInterval != null )
+                if( !string.IsNullOrEmpty(Option.BeaconHexColourState2) && Option.BeaconChangeStateInterval1 != null )
                 {
                     Task.Run(async () => await _RunBackgroundThread(Option));
                 }
@@ -72,7 +93,9 @@ namespace SeverityBeacon
                 _Port.Close();
             }
         }
+        #endregion Public Methods
         
+        #region Private Methods
         /// <summary>
         /// Run the flashing task
         /// </summary>
@@ -83,15 +106,16 @@ namespace SeverityBeacon
                 _Flashing = true;
                 if( !_Port.IsOpen ) _Port.Open();
                 _CancellationToken = new CancellationTokenSource();
-                while( _Flashing && Option.BeaconChangeStateInterval != null )
+                while( _Flashing && Option.BeaconChangeStateInterval1 != null )
                 {
                     //Console.WriteLine($"WR 00 {_HexToByte(Option.BeaconHexColourState1)}");
                     _Port.WriteLine($"WR 00 {_HexToByte(Option.BeaconHexColourState1)}");
-                    await Task.Delay(TimeSpan.FromMilliseconds((int)Option.BeaconChangeStateInterval), _CancellationToken.Token);
+                    await Task.Delay(TimeSpan.FromMilliseconds((int)Option.BeaconChangeStateInterval1), _CancellationToken.Token);
                     
                     //Console.WriteLine($"WR 00 {_HexToByte(Option.BeaconHexColourState2!)}");
                     _Port.WriteLine($"WR 00 {_HexToByte(Option.BeaconHexColourState2!)}");
-                    await Task.Delay(TimeSpan.FromMilliseconds((int)Option.BeaconChangeStateInterval), _CancellationToken.Token);
+                    var StateChangeInterval2 = Option.BeaconChangeStateInterval2 ?? (int)Option.BeaconChangeStateInterval1;
+                    await Task.Delay(TimeSpan.FromMilliseconds(StateChangeInterval2), _CancellationToken.Token);
                 }
                 
                 _CancellationToken = null;
@@ -113,7 +137,14 @@ namespace SeverityBeacon
         private string _HexToByte(string HexCode)
         {
             if( HexCode.Length != 7 ) throw new Exception("Invalid hex code!");
-            return $"{HexCode[1]}{HexCode[2]} {HexCode[3]}{HexCode[4]} {HexCode[5]}{HexCode[6]}";
+            var hex1 = $"{HexCode[1]}{HexCode[2]}";
+            var hex2 = $"{HexCode[3]}{HexCode[4]}";
+            var hex3 = $"{HexCode[5]}{HexCode[6]}";
+            if( hex1 == "00" ) hex1 = "01";
+            if( hex2 == "00" ) hex2 = "01";
+            if( hex3 == "00" ) hex3 = "01";
+            return $"{hex1} {hex2} {hex3}";
         }
+        #endregion Private Methods
     }
 }
